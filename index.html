@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socket.IO chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font: 13px Helvetica, Arial;
+        }
+        .web-content{
+            background-color: transparent;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 960px;
+            height: 100vh;
+            /*display: initial;*/
+            /*align-content: ;*/
+            /*min-height: 300px;*/
+
+            /*padding: 0px;*/
+            display: flex;
+        }
+        .web-content>.text-left{
+            width: 80%;
+            height: 100vh;
+        }
+        .web-content>.text-left>.chat-display {
+            width: 100%;
+            height: 94%;
+            overflow-y: scroll;
+            white-space: nowrap;
+            position:initial;
+            padding: 5px;
+            border: 1px solid #cccc33;
+            border-radius: 7pt;
+            background: #dddd88;
+        }
+        /*.chat-window::-webkit-scrollbar{*/
+        /*    width: 0;*/
+        /*}*/
+        .web-content>.text-left>.form {
+            /*margin: 2px auto;*/
+            /*margin-left: auto;*/
+            /*margin-right: auto;*/
+            max-width: 960px;
+            height: 10%;
+            background: #dddd88;
+            border-radius: 7pt;
+            caret-color: darkgoldenrod;
+            position: fixed;
+
+        }
+        form input { text-decoration-color:darkgoldenrod; background: lightgoldenrodyellow; border: 1; padding: 1.3%; width: 91%; }
+        form button { width: 9%;  background: yellowgreen; border: none; padding: 1.6%; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        .web-content>.user-list{
+            /*float: right;*/
+            width: 20%;
+            margin-left: 3px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            white-space: nowrap;
+            position: initial;
+            height: 100%;
+            border: 1px solid #cccc33;
+            border-radius: 7pt;
+            background: #dddd88;
+            /*margin: 5px 5px;*/
+            /*order:2;*/
+        }
+        h3{
+            display:inline-block;
+        }
+        .myself{
+            display:inline-block;
+        }
+        .setting{
+            display:inline-block;
+            /*justify-content: flex-end*/
+            float:right;
+            background-color: yellowgreen;
+        }
+
+    </style>
+</head>
+<body>
+<div class="web-content">
+    <div class="text-left">
+        <div class="chat-display">
+            <ul id="messages"></ul>
+        </div>
+        <div class="chat-write">
+            <form action="">
+                <input id="m" autocomplete="off"/><button>Send</button>
+            </form>
+        </div>
+
+    </div>
+    <div class="user-list">
+        <h2>Online Users:</h2>
+        <h3><div class="myself">myself</div></h3>
+        <button class="setting">Setting</button>
+        <hr>
+        <ol>
+            ss
+        </ol>
+    </div>
+</div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+        let selfNum; // this is the auto-generated number
+        let height = 10;
+        $(function () {
+            var socket = io();
+            socket.on('connection', function(usm){
+                console.log("Received the username from server is: " , usm);
+                $(".myself").text('User'+usm+' (you)');
+                selfNum = usm;
+                // for(i = 0; i < cru.length;i++){
+                //     console.log(cru[i]);
+                // }
+                // // $(".ol").append($('<li>').text(msg))
+
+            })
+            socket.on('update-currentUser', function(cru){
+                console.log("Received the current user list from server is: ");
+                $("ol").empty();
+                for(let i = 0; i < cru.length;i++){
+                    console.log(cru[i]);
+                    $("ol").append($('<li>').text('User'+cru[i]));
+                }
+            })
+            socket.on('chat-log-history', function(historyArray){
+                console.log("Received the current user list from server is: ");
+                for(let i = 0; i < historyArray.length;i++){
+                    console.log(historyArray[i]);
+                    $('#messages').append($('<li>').text(historyArray[i]));
+                }
+            })
+            // $(window).on("beforeunload", function() {
+            //     socket.emit('disconnect', $('.myself').val());
+            // })
+            socket.on("disconnect", function(cru){
+                console.log("the current users are:")
+                $("ol").empty();
+                for(let i = 0; i < cru.length;i++){
+                    console.log(cru[i]);
+                    $("ol").append($('<li>').text('User'+cru[i]));
+                }
+                // $(".ol").append($('<li>').text(msg))
+            })
+
+            $('form').submit(function(e) {
+                e.preventDefault(); // prevents page reloading
+                console.log("myself name is : ", selfNum);
+                let msgData= 'User'+selfNum+': '+$('#m').val();
+                console.log("msg sent is: ",msgData);
+                socket.emit('chat message', msgData);
+                $('#m').val('');
+                return false;
+            });
+            socket.on('chat message', function(msg){
+                let userName = 'User'+selfNum;
+
+                if(msg.includes(userName) === true) {
+                    $('#messages').append($('<li>').append($('<b>').text(msg)));
+                }
+                else{
+                    $('#messages').append($('<li>').text(msg));
+                }
+
+
+                //auto scroll down when new msg comes.
+                height += 20;
+                $('.chat-display').animate({scrollTop: height});
+            });
+        });
+
+    </script>
+
+</body>
+</html>
