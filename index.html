@@ -224,7 +224,14 @@
                 // tempName.fontcolor(rgb(colorRed,colorGreen,colorBlue));
                 // let text = result.time+result.user+': '+result.msg;
                 if(result.includes(userName) === true) {
+                    // $("<li>").css({
+                    //     fontcolor: "red" ,
+                    // })
+                    // let msg = document.querySelector('b');
+                    // msg.style.color = "red";
+                    // result.fontcolor("red");
                     $('#messages').append($('<li>').append($('<b>').text(result)));
+                    // document.getElementsByTagName(li).style.color = "red";
                 }
                 else{
                     $('#messages').append($('<li>').text(result));

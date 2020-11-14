@@ -1,4 +1,5 @@
 var app = require('express')();
+// app.use(cookieParser());
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var currentUser = [];
