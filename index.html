@@ -77,12 +77,12 @@
         .myself{
             display:inline-block;
         }
-        .setting{
-            display:inline-block;
-            /*justify-content: flex-end*/
-            float:right;
-            background-color: yellowgreen;
-        }
+        /*.setting{*/
+        /*    display:inline-block;*/
+        /*    !*justify-content: flex-end*!*/
+        /*    float:right;*/
+        /*    background-color: yellowgreen;*/
+        /*}*/
 
     </style>
 </head>
@@ -102,7 +102,7 @@
     <div class="user-list">
         <h2>Online Users:</h2>
         <h3><div class="myself">myself</div></h3>
-        <button class="setting">Setting</button>
+<!--        <button class="setting">Setting</button>-->
         <hr>
         <ol>
             ss
@@ -112,14 +112,18 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script>
-        let selfNum; // this is the auto-generated number
+        let selfNum; // this is the auto-generated number -1 means user changed his name
+        let userName;
+        let userColor;
+        let currentUser = [];
         let height = 10;
         $(function () {
             var socket = io();
             socket.on('connection', function(usm){
                 console.log("Received the username from server is: " , usm);
-                $(".myself").text('User'+usm+' (you)');
-                selfNum = usm;
+                $(".myself").text(/*'User'+*/usm.name+' (you)');
+                userName = usm.name;
+                userColor = usm.color;
                 // for(i = 0; i < cru.length;i++){
                 //     console.log(cru[i]);
                 // }
@@ -129,15 +133,18 @@
             socket.on('update-currentUser', function(cru){
                 console.log("Received the current user list from server is: ");
                 $("ol").empty();
+                currentUser = [];
                 for(let i = 0; i < cru.length;i++){
                     console.log(cru[i]);
-                    $("ol").append($('<li>').text('User'+cru[i]));
+                    currentUser.push(cru[i]);
+                    $("ol").append($('<li>').text(/*'User'+*/cru[i].name));
                 }
             })
             socket.on('chat-log-history', function(historyArray){
                 console.log("Received the current user list from server is: ");
                 for(let i = 0; i < historyArray.length;i++){
                     console.log(historyArray[i]);
+                    // let text = historyArray[i].time + historyArray[i].user+': '+ historyArray[i].msg;
                     $('#messages').append($('<li>').text(historyArray[i]));
                 }
             })
@@ -149,35 +156,110 @@
                 $("ol").empty();
                 for(let i = 0; i < cru.length;i++){
                     console.log(cru[i]);
-                    $("ol").append($('<li>').text('User'+cru[i]));
+                    $("ol").append($('<li>').text(cru[i].name));
                 }
                 // $(".ol").append($('<li>').text(msg))
             })
 
             $('form').submit(function(e) {
                 e.preventDefault(); // prevents page reloading
-                console.log("myself name is : ", selfNum);
-                let msgData= 'User'+selfNum+': '+$('#m').val();
+                console.log("myself name is : ", userName);
+                let msgData= userName+': '+$('#m').val();
+                // let msgData = {
+                //     name: userName,
+                //     color: userColor,
+                //     msg: $('#m').val()
+                // }
                 console.log("msg sent is: ",msgData);
-                socket.emit('chat message', msgData);
-                $('#m').val('');
-                return false;
-            });
-            socket.on('chat message', function(msg){
-                let userName = 'User'+selfNum;
+                if($('#m').val().startsWith("/name ") === true || $('#m').val().startsWith("/color ") === true) {
 
-                if(msg.includes(userName) === true) {
-                    $('#messages').append($('<li>').append($('<b>').text(msg)));
+                    if ($('#m').val().startsWith("/name ") === true) {
+                        let temp = $('#m').val().replace("/name ","");
+                        let tagMsg = {
+                            first: userName,
+                            second: temp
+                        }
+                        console.log("the '/name' tag has been called, the new name value is: ",$('#m').val());
+                        socket.emit('update-username', tagMsg);
+                        $('#m').val('');
+                    }
+                    if ($('#m').val().startsWith("/color ") === true) {
+                        let temp = $('#m').val().replace("/color ","");
+                        let tagMsg = {
+                            first: userName,
+                            second: temp
+                        }
+                        console.log("the '/color' tag has been called, the new color value is: ",$('#m').val());
+                        socket.emit('update-usercolor', tagMsg);
+                        $('#m').val('');
+                    }
+                }
+                else {
+                    //other normal msg go here
+                    if (msgData.includes(":)") === true) {
+                        msgData = msgData.replace(":)", "😁");
+                    }
+                    if (msgData.includes(":(") === true) {
+                        msgData = msgData.replace(":(", "🙁");
+                    }
+                    if (msgData.includes(":o") === true) {
+                        msgData = msgData.replace(":o", "😲");
+                    }
+                    socket.emit('chat message', msgData);
+                    $('#m').val('');
+                    return false;
+                }
+            });
+            socket.on('chat message', function(result){
+                // let userName = 'User'+selfNum;
+                // if(msg.includes(":)") === true){
+                //     // $('#messages').append($('<li>').append($('<b>').text("yes")));
+                //     msg = msg.replace(":)","😁");
+                //     // $('#messages').append($('<li>').append($('<b>').text("😁")));
+                // }
+                // let colorRed = result.color.slice(0,2);
+                // let colorGreen = result.color.slice(2,4);
+                // let colorBlue = result.color.slice(4,6);
+                // let tempName = result.name;
+                // tempName.fontcolor(rgb(colorRed,colorGreen,colorBlue));
+                // let text = result.time+result.user+': '+result.msg;
+                if(result.includes(userName) === true) {
+                    $('#messages').append($('<li>').append($('<b>').text(result)));
                 }
                 else{
-                    $('#messages').append($('<li>').text(msg));
+                    $('#messages').append($('<li>').text(result));
                 }
-
 
                 //auto scroll down when new msg comes.
                 height += 20;
                 $('.chat-display').animate({scrollTop: height});
             });
+            socket.on('update-username', function(usm){
+                //need to be done
+                console.log("Received the username from server is: " , usm);
+                $(".myself").text(usm+' (you)');
+                userName = usm;
+            })
+            socket.on('update-usercolor', function(usc){
+                //need to be done
+                console.log("Received the username from server is: " , usm,"the new color is: ", usc);
+                $(".myself").text(usm+' (you)');
+                userColor = usc;
+            })
+
+            socket.on('existing-username-message', function(usm){
+                //need to be done
+                alert("The name you typed is exist, please try another name");
+            })
+            socket.on('tooLong-username-message', function(usm){
+                //need to be done
+                alert("The name you typed is too long, please try another name");
+            })
+            socket.on('invalid-color-message', function(usm){
+                //need to be done
+                alert("The color you typed is invalid, please try another color. Command:[/color RRGGBB]");
+            })
+
         });
 
     </script>
